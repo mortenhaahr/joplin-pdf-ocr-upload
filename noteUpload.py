@@ -1,23 +1,47 @@
 #!/usr/bin/env python3
 import sys
-
-API_TOKEN = 'ca43312f9a55d98fdc9559a8b8b6cd7b72862528a87fa874ff57d78cdfeec13d7bc465a31f2dcf09d7877e9292d00e233a39230aa6a84571334f82d4d4a03608'
+import argparse
+import os
 
 from joplinPdf2Images import joplinPdf2Images
 from joplinFindNote import joplinFindNote
 from joplinOcrImages import joplinOcrImages
 
 if __name__ == "__main__":
-    # Get parent folder:
-    argv = sys.argv.copy() # Copy because we want to manipulate
-    script_name = argv[0]
-    argv.pop(0)
-    if(len(argv) < 2 or argv[-1][-4:] != ".pdf"):
-        raise SystemExit(f"Usage: {script_name} [parent-notebooks] <note-name> <pdf-path>")
-    note_parents = argv[:-2]
-    note_name = argv[-2]
-    pdf_path = argv[-1]
+    use_id_provided = '--use-id' in sys.argv
+
+    parser = argparse.ArgumentParser(description='Example command line options')
+    parser.add_argument('--use-id', default=False, action='store_true', help='Specify the note ID. Default=False')
+
+    parser.add_argument('--notebooks', nargs='+', required=not use_id_provided, help="The notebook structure. Can be nested.")
+    parser.add_argument('--note-name', required=not use_id_provided, type=str, help="Name of the note")
+    parser.add_argument('--pdf', required=True, type=str, help="Path of the PDF")
+    parser.add_argument('--note-id', required=use_id_provided in sys.argv, type=str, help="ID of the PDF")
+    parser.add_argument('--api-token', type=str, help="Joplin Web Clipper API Token. Can also be provided as environment variable: `JOPLIN_API_TOKEN`")
+
+    args = parser.parse_args()
+
+    if args.use_id and args.note_name:
+        raise argparse.ArgumentTypeError("Specifying --note-name not allowed with --use-id")
+    elif (not args.use_id) and args.note_id:
+        raise argparse.ArgumentTypeError("Specifying --note-id not allowed without --use-id")
+
+    if args.pdf[-4:] != ".pdf":
+        raise argparse.ArgumentTypeError("--pdf must be a PDF file")
+    pdf_path = args.pdf
     
-    notebook_page_id = joplinFindNote(note_name, note_parents, API_TOKEN)
-    joplinPdf2Images(pdf_path, notebook_page_id, API_TOKEN)
-    joplinOcrImages(notebook_page_id, API_TOKEN)
+    if args.api_token:
+        api_token = args.api_token
+    else:
+        api_token = os.environ.get('JOPLIN_API_TOKEN')
+    
+    if not api_token:
+        raise argparse.ArgumentTypeError("Must provide api token either through CLI or environment variable")
+    
+    if not use_id_provided:
+        note_id = joplinFindNote(args.note_name, args.notebooks, api_token)
+    else:
+        note_id = args.note_id
+
+    joplinPdf2Images(pdf_path, note_id, api_token)
+    joplinOcrImages(note_id, api_token)

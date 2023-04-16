@@ -10,9 +10,10 @@ Result: Searchable printout of a PDF added to the page.
     - It is recommended to use a virtual environment but not necessary.
 - Make sure Joplin Web Clipper is enabled and started in the client.
     - Go to Tools -> Options -> Web Clipper and enable it.
-- Replace the API token in the script (around line 10)
-- Run `./noteUpload.py [parent-notebooks] <note-name> <pdf-path>`
-    - Concrete example: `./noteUpload.py "Embedded Real Time Systems" "Week 2" "SystemC" L4_SystemC_part3.pdf`
+- Export your API key to the environment variable `JOPLIN_API_TOKEN`
+  - Alternative: Provide it through CLI with `--api-token`
+- Run `./noteUpload.py --notebooks "parent" "child" --note-name "title" --pdf "/path/to/pdf"`
+    - Concrete example: `./noteUpload.py --notebooks "Embedded Real Time Systems" "Week 2" --note-name "SystemC" --pdf L4_SystemC_part3.pdf`
         - Assumes notebook structure: Embedded Real-Time Systems -> Week 2 -> SystemC. Copies printout of "L4_SystemC_part3.pdf" to it.
 
 # Known issues:
